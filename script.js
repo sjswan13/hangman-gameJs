@@ -7,15 +7,32 @@ const finalMessage = document.getElementById('final-message');
 
 const figureParts = document.querySelectorAll('.figure-part');
 
-const words = ['application', 'programming', 'interface', 'wizard', 'special', 'reynauds', 'rhabdomylysis'];
-
-let selectedWord = words[Math.floor(Math.random() * words.length)];
-
+let selectedWord;
 const correctLetters = [];
 const wrongLetters = [];
 
-//Show hidden Word
+// Fetch a random word from the API
+async function getRandomWord() {
+  try {
+    const response = await fetch('https://random-word-api.herokuapp.com/word?number=1');
+    const data = await response.json();
+    selectedWord = data[0];
+    console.log('Fetched word:', selectedWord); // Debugging log
+    displayWord();
+  } catch (error) {
+    console.error('Error fetching the word:', error);
+    finalMessage.innerText = 'Failed to load word. Please try again.';
+    popup.style.display = 'flex';
+  }
+}
+
+// Show hidden word
 function displayWord() {
+  if (!selectedWord) {
+    console.error('displayWord called without a selected word');
+    return;
+  }
+
   wordEl.innerHTML = `
     ${selectedWord
       .split('')
@@ -23,27 +40,27 @@ function displayWord() {
         <span class="letter">
         ${correctLetters.includes(letter) ? letter : ''}
         </span>`)
-        .join('')
+      .join('')
     }`;
 
   const innerWord = wordEl.innerText.replace(/\n/g, '');
 
-  if(innerWord === selectedWord) {
+  if (innerWord === selectedWord) {
     finalMessage.innerText = 'Congratulations, you won!';
     popup.style.display = 'flex';
   }
 }
 
-//Update Wrong Letters
+// Update wrong letters
 function updateWrongLettersEl() {
-  //Display Wrong letters
+  // Display wrong letters
   wrongLettersEl.innerHTML = `
     ${wrongLetters.length > 0 ? '<p>Wrong</p>' : ''}
-    ${wrongLetters.map(letter => `<span>${letter}</Span>`)}
+    ${wrongLetters.map(letter => `<span>${letter}</span>`).join('')}
   `;
 
-  //Display Parts
-   figureParts.forEach((part, index) => {
+  // Display parts
+  figureParts.forEach((part, index) => {
     const errors = wrongLetters.length;
 
     if (index < errors) {
@@ -53,39 +70,42 @@ function updateWrongLettersEl() {
     }
   });
 
-  //Check if Lost
-  if(wrongLetters.length === figureParts.length) {
+  // Check if lost
+  if (wrongLetters.length === figureParts.length) {
     finalMessage.innerText = 'Unfortunately you lost.';
     popup.style.display = 'flex';
   }
 }
 
-//show notification
+// Show notification
 function showNotification() {
   notification.classList.add('show');
 
   setTimeout(() => {
-    notification.classList.remove('show')
-}, 2000);
+    notification.classList.remove('show');
+  }, 2000);
 }
 
-//Keydown letter press
+// Keydown letter press
 window.addEventListener('keydown', e => {
-  if(e.keyCode >= 65 && e.keyCode <= 90) {
-    const letter = e.key;
+  if (e.keyCode >= 65 && e.keyCode <= 90) {
+    const letter = e.key.toLowerCase();
+    
+    if (!selectedWord) {
+      console.error('Keydown event triggered without a selected word');
+      return;
+    }
 
-    if(selectedWord.includes(letter)) {
-      if(!correctLetters.includes(letter)) {
+    if (selectedWord.includes(letter)) {
+      if (!correctLetters.includes(letter)) {
         correctLetters.push(letter);
-
         displayWord();
       } else {
         showNotification();
       }
     } else {
-      if(!wrongLetters.includes(letter)) {
+      if (!wrongLetters.includes(letter)) {
         wrongLetters.push(letter);
-
         updateWrongLettersEl();
       } else {
         showNotification();
@@ -94,19 +114,18 @@ window.addEventListener('keydown', e => {
   }
 });
 
-//Restart Game and Play Again
+// Restart game and play again
 playAgainBtn.addEventListener('click', () => {
-  //empty arrays
+  // Empty arrays
   correctLetters.splice(0);
   wrongLetters.splice(0);
 
-  selectedWord = words[Math.floor(Math.random() * words.length)];
-  displayWord();
+  // Fetch a new word
+  getRandomWord();
 
   updateWrongLettersEl();
-
   popup.style.display = 'none';
-})
+});
 
-displayWord();
-updateWrongLettersEl();
+// Initial call to get a word and display
+getRandomWord();
