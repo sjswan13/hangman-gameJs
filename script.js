@@ -17,7 +17,7 @@ async function getRandomWord() {
     const response = await fetch('https://random-word-api.herokuapp.com/word?number=1');
     const data = await response.json();
     selectedWord = data[0];
-    console.log('Fetched word:', selectedWord); // Debugging log
+    console.log('Fetched word:', selectedWord); 
     displayWord();
   } catch (error) {
     console.error('Error fetching the word:', error);
